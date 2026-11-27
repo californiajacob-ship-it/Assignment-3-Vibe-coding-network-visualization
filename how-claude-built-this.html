@@ -42,7 +42,7 @@
 <main class="page">
   <a class="back" href="./">&larr; Back to the map</a>
   <h1>How Claude built this</h1>
-  <p class="lede">Claude, an AI model made by Anthropic, wrote the code for this page, checked it, and published it. The author directed every step through four prompts in one conversation on November 27, 2026. This page lists the tools, the checks, and those prompts.</p>
+  <p class="lede">Claude, an AI model made by Anthropic, wrote the code for this page, checked it, and published it. The author directed every step through five prompts in one conversation on November 27, 2026. This page lists the tools, the checks, and those prompts.</p>
 
   <h2>Tools</h2>
   <p>The author already had accounts with Claude Code, GitHub, and Vercel and had used all three before this project.</p>
@@ -69,7 +69,7 @@
     <li>It tested every way into the details: clicking programs, funders, and DDF on the map; the area buttons; the program list; the "try one of these" buttons; the search box, including a name that does not exist; the Escape key; and clicking empty space to reset.</li>
     <li>It confirmed that hovering a bar in a chart lights up the matching dots on the map, and that moving the mouse away puts the map back.</li>
     <li>The screenshots turned up problems that Claude then fixed: the map sat too small in its box, funder names overlapped program names, one label ran off the edge, and the $500M label spilled outside its chart.</li>
-    <li>The author reviewed the result and spotted a gap Claude had missed. The original map showed connections when you hovered over a dot, and the first version of this one did not. That became the third prompt.</li>
+    <li>The author reviewed the result and spotted a gap Claude had missed. The original map showed connections when you hovered over a dot, and the first version of this one did not. That became the fourth prompt.</li>
     <li>After each publish, Claude loaded the live Vercel site to confirm every file came through and the page had no errors.</li>
   </ul>
 
@@ -89,6 +89,16 @@
 
   <div class="turn">
     <div class="you"><div class="lab">Prompt 2</div>
+      <p>Keep it private</p>
+      <p class="note">Answering Claude's question about whether the GitHub repository should be public or private.</p>
+    </div>
+    <details class="reply"><summary>Claude's reply</summary><div class="body">
+      <p>The repository stays private. The live site on Vercel is still public, so anyone with the link can view it.</p>
+    </div></details>
+  </div>
+
+  <div class="turn">
+    <div class="you"><div class="lab">Prompt 3</div>
       <p>What are some other helpful components that could be in this, to make it more informational for users?</p>
     </div>
     <details class="reply"><summary>Claude's reply</summary><div class="body">
@@ -101,7 +111,7 @@
   </div>
 
   <div class="turn">
-    <div class="you"><div class="lab">Prompt 3</div>
+    <div class="you"><div class="lab">Prompt 4</div>
       <p>Let's do 1, 2, 3. It's also missing the hovering feature on the original one.</p>
     </div>
     <details class="reply"><summary>Claude's reply</summary><div class="body">
@@ -111,7 +121,7 @@
   </div>
 
   <div class="turn">
-    <div class="you"><div class="lab">Prompt 4</div>
+    <div class="you"><div class="lab">Prompt 5</div>
       <p>Oh, and the How Claude Built This page. It also needs an AI explainer -- What software tools used (Claude code, Github, vercel, which i already had accounts for and experience with), how i verified accuracy and usability, and the prompts used (use what we discussed)</p>
     </div>
     <details class="reply"><summary>Claude's reply</summary><div class="body">
