@@ -191,30 +191,52 @@
     .attr("dy", "0.35em")
     .text(function (d) { return d.name; });
 
-  // ---------- tooltip ----------
+  // ---------- hover pop-up ----------
   var tip = document.getElementById("tip");
   var mapBox = document.querySelector(".map");
-  var tipText = function (d) {
-    if (d.kind === "ddf") return "<b>Doris Duke Foundation</b>In all " + programs.length + " programs";
-    if (d.kind === "program") return "<b>" + esc(d.name) + "</b>" + (money(d.amount) || "Amount not found") + ", " + plural(d.funders.length + 1, "funder", "funders");
-    var n = d.programs.length;
-    return "<b>" + esc(d.name) + "</b>" + (n === 1 ? "In " + esc(d.programs[0].short) : "In " + n + " programs");
+  var dot = function (area) { return '<i class="dot" style="background:' + COLOR[area] + '"></i>'; };
+  var tipHtml = function (d) {
+    var cta = '<span class="cta">Click for details</span>';
+    if (d.kind === "ddf") {
+      return '<div class="hd"><b>Doris Duke Foundation</b>' + cta + "</div>" +
+        '<div class="m">Endowment ' + bil(D.endowments.DDF.billions) + " &middot; in all " + programs.length + " programs</div>";
+    }
+    if (d.kind === "program") {
+      return '<div class="hd"><b>' + esc(d.name) + "</b>" + cta + "</div>" +
+        '<div class="m">' + dot(d.area) + esc(d.area) + " &middot; " + d.year + "</div>" +
+        '<div class="amt">' + (money(d.amount) || "Amount not found") + "</div>" +
+        (d.amount != null ? '<div class="m">' + esc(d.basis) + "</div>" : "") +
+        '<div class="m">' + plural(d.funders.length + 1, "funder", "funders") + ", including DDF</div>";
+    }
+    var e = D.endowments[d.name], n = d.programs.length;
+    return '<div class="hd"><b>' + esc(d.name) + "</b>" + cta + "</div>" +
+      '<div class="m">' + (e ? "Endowment " + bil(e.billions) + " &middot; " : "") + (n === 1 ? "1 program" : n + " programs") + " with DDF</div>" +
+      "<ul>" + d.programs.map(function (p) { return "<li>" + dot(p.area) + esc(p.short) + "</li>"; }).join("") + "</ul>";
   };
+  function moveTip(e) {
+    if (tip.hidden) return;
+    var b = mapBox.getBoundingClientRect();
+    var x = e.clientX - b.left + 16, y = e.clientY - b.top + 16;
+    if (x + tip.offsetWidth > b.width - 6) x = e.clientX - b.left - tip.offsetWidth - 16;
+    if (y + tip.offsetHeight > b.height - 6) y = e.clientY - b.top - tip.offsetHeight - 16;
+    tip.style.left = Math.max(6, x) + "px";
+    tip.style.top = Math.max(6, y) + "px";
+  }
+  var targetOf = function (d) { return d.kind === "ddf" ? { kind: "ddf" } : { kind: d.kind, id: d.id }; };
+
   nodeSel
     .on("pointerenter", function (e, d) {
       if (e.pointerType !== "mouse") return;
-      tip.innerHTML = tipText(d);
+      tip.innerHTML = tipHtml(d);
       tip.hidden = false;
+      moveTip(e);
+      highlight(targetOf(d));
     })
-    .on("pointermove", function (e) {
-      if (tip.hidden) return;
-      var b = mapBox.getBoundingClientRect();
-      var x = e.clientX - b.left + 14, y = e.clientY - b.top + 14;
-      if (x + tip.offsetWidth > b.width - 6) x = e.clientX - b.left - tip.offsetWidth - 14;
-      tip.style.left = x + "px";
-      tip.style.top = y + "px";
+    .on("pointermove", moveTip)
+    .on("pointerleave", function (e) {
+      tip.hidden = true;
+      if (e.pointerType === "mouse") highlight(focus);
     })
-    .on("pointerleave", function () { tip.hidden = true; })
     .on("click", function (e, d) {
       e.stopPropagation();
       tip.hidden = true;
@@ -225,29 +247,27 @@
     });
 
   function activate(d, fromMap) {
-    var next = d.kind === "ddf" ? { kind: "ddf" } : { kind: d.kind, id: d.id };
+    var next = targetOf(d);
     if (focus && focus.kind === next.kind && focus.id === next.id) setFocus(null);
     else setFocus(next, fromMap);
   }
 
-  // ---------- focus state ----------
+  // ---------- highlighting ----------
+  // One function decides what lights up, for both clicks (the saved focus) and hovers (a preview).
   var focus = null;
   var byId = {};
   nodes.forEach(function (n) { byId[n.id] = n; });
 
-  function setFocus(f, fromMap) {
-    focus = f;
-    var hot = new Set(), hotLinks = new Set(), picked = null, labelFunders = false;
-
+  function related(f) {
+    var hot = new Set(), picked = null;
     if (f && f.kind === "program") {
-      var p = byId[f.id]; picked = p;
-      hot.add(p); hot.add(ddf);
-      p.funders.forEach(function (n) { hot.add(funderMap[n]); });
-      labelFunders = p.funders.length <= 15;
+      picked = byId[f.id];
+      hot.add(picked); hot.add(ddf);
+      picked.funders.forEach(function (n) { hot.add(funderMap[n]); });
     } else if (f && f.kind === "funder") {
-      var fu = byId[f.id]; picked = fu;
-      hot.add(fu); hot.add(ddf);
-      fu.programs.forEach(function (q) { hot.add(q); });
+      picked = byId[f.id];
+      hot.add(picked); hot.add(ddf);
+      picked.programs.forEach(function (q) { hot.add(q); });
     } else if (f && f.kind === "area") {
       hot.add(ddf);
       programs.forEach(function (q) {
@@ -257,15 +277,21 @@
       picked = ddf;
       nodes.forEach(function (n) { hot.add(n); });
     }
+    return { hot: hot, picked: picked };
+  }
 
+  function highlight(f) {
+    var r = related(f), hot = r.hot, picked = r.picked, hotLinks = new Set();
+    var dimming = !!f && f.kind !== "ddf";
     links.forEach(function (l) {
-      if (!f) return;
+      if (!dimming) return;
       if (f.kind === "funder") { if (l.source === picked || (l.spoke && hot.has(l.target))) hotLinks.add(l); }
       else if (f.kind === "program") { if (l.target === picked) hotLinks.add(l); }
       else if (hot.has(l.source) && hot.has(l.target)) hotLinks.add(l);
     });
+    var labelFunders = f && f.kind === "program" && picked.funders.length <= 15;
 
-    svg.classed("focusing", !!f && f.kind !== "ddf");
+    svg.classed("focusing", dimming);
     nodeSel.classed("hot", function (d) { return hot.has(d); })
       .classed("picked", function (d) { return d === picked; });
     placeLabels(function (d) {
@@ -273,6 +299,20 @@
     }, picked, f ? hot : null);
     linkSel.classed("hot", function (l) { return hotLinks.has(l); });
 
+    // The charts below the map follow the same highlight.
+    document.querySelectorAll(".linked").forEach(function (el) {
+      el.classList.toggle("dimming", dimming);
+    });
+    document.querySelectorAll(".linked [data-go]").forEach(function (el) {
+      var id = el.dataset.go, n = id === "ddf" ? ddf : byId[id];
+      el.classList.toggle("hot", dimming && !!n && hot.has(n));
+      el.classList.toggle("picked", !!n && n === picked);
+    });
+  }
+
+  function setFocus(f, fromMap) {
+    focus = f;
+    highlight(f);
     document.querySelectorAll(".area-btn").forEach(function (b) {
       var on = b.dataset.area === "" ? !f : (f && f.kind === "area" && f.id === b.dataset.area);
       b.setAttribute("aria-pressed", on ? "true" : "false");
@@ -280,7 +320,6 @@
     document.querySelectorAll(".prow[data-id]").forEach(function (b) {
       b.setAttribute("aria-current", f && f.kind === "program" && f.id === b.dataset.id ? "true" : "false");
     });
-
     renderCard();
     if (fromMap && window.matchMedia("(max-width: 900px)").matches) {
       var card = document.getElementById("card");
@@ -288,6 +327,23 @@
       if (top > window.innerHeight - 120 || top < 0) card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
+
+  // Hovering a program or funder anywhere outside the map (lists, cards, charts) previews it on the map.
+  var hoverEl = null;
+  document.addEventListener("pointerover", function (e) {
+    if (e.pointerType !== "mouse") return;
+    var t = e.target.closest("[data-go]");
+    if (!t || t.closest("#map") || t === hoverEl) return;
+    hoverEl = t;
+    var id = t.dataset.go;
+    highlight(id === "ddf" ? { kind: "ddf" } : { kind: id.charAt(0) === "p" ? "program" : "funder", id: id });
+  });
+  document.addEventListener("pointerout", function (e) {
+    if (!hoverEl || e.pointerType !== "mouse") return;
+    if (e.relatedTarget && hoverEl.contains(e.relatedTarget)) return;
+    hoverEl = null;
+    highlight(focus);
+  });
 
   // Show funder labels without letting them cover program names, circles, or each other.
   // Each label tries the right side, then the left; if both collide it waits for hover.
@@ -424,7 +480,11 @@
     var id = t.dataset.go;
     var inList = !!t.closest(".lists");
     setFocus(id === "ddf" ? { kind: "ddf" } : { kind: id.slice(0, 1) === "p" ? "program" : "funder", id: id });
-    if (inList || t.closest(".card")) {
+    if (t.closest(".linked")) {
+      // From a chart, jump up to the map (desktop) or the card (phone) so the click has a visible result.
+      var target = window.matchMedia("(max-width: 900px)").matches ? cardEl : mapBox;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (inList || t.closest(".card")) {
       if (window.matchMedia("(max-width: 900px)").matches) cardEl.scrollIntoView({ behavior: "smooth", block: "start" });
       else if (cardEl.getBoundingClientRect().top < 0) cardEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -460,6 +520,80 @@
   sharedEl.innerHTML = funders.filter(function (f) { return f.programs.length > 1; })
     .sort(function (a, b) { return b.programs.length - a.programs.length || a.name.localeCompare(b.name); })
     .map(function (f) { return funderChip(f.name); }).join("");
+
+  // ---------- chart 1: timeline ----------
+  // Years with programs get a column. A single empty year keeps its own narrow column;
+  // a longer empty stretch collapses into one "none" column so the chart stays short.
+  var years = programs.map(function (p) { return p.year; });
+  var yMin = d3.min(years), yMax = d3.max(years);
+  var cols = [], y = yMin;
+  while (y <= yMax) {
+    var here = programs.filter(function (p) { return p.year === y; });
+    if (here.length) { cols.push({ label: String(y), items: here }); y++; continue; }
+    var end = y;
+    while (end + 1 <= yMax && !programs.some(function (p) { return p.year === end + 1; })) end++;
+    cols.push({ label: end > y ? y + "–" + end : String(y), items: [], gap: end > y });
+    y = end + 1;
+  }
+  document.getElementById("timeline").innerHTML = cols.map(function (c) {
+    return '<div class="tl-col' + (c.gap ? " gap" : c.items.length ? "" : " empty") + '"><div class="tl-year">' + c.label + "</div>" +
+      (c.items.length ? c.items.map(function (p) {
+        return '<button type="button" class="tl-item" data-go="' + esc(p.id) + '" style="--c:' + COLOR[p.area] + '">' + esc(p.short) +
+          '<span class="a">' + (money(p.amount) || "no amount") + "</span></button>";
+      }).join("") : '<div class="tl-none">No new programs</div>') + "</div>";
+  }).join("");
+  var early = programs.filter(function (p) { return p.year < 2019; }).length;
+  var lateYears = d3.range(2019, yMax + 1);
+  var missing = lateYears.filter(function (yr) { return !programs.some(function (p) { return p.year === yr; }); });
+  document.getElementById("tl-sub").textContent =
+    plural(early, "program", "programs") + " began before 2019. The other " + (programs.length - early) +
+    " started between 2019 and " + yMax + (missing.length ? ", with at least one new program every year except " + missing.join(" and ") : "") + ".";
+
+  // ---------- chart 2: program amounts ----------
+  var KIND = {
+    "Humanity AI": "5-year commitment",
+    "Artists Make Technology": "3-year plan",
+    "DDF and Ford technology grants": "5-year commitment",
+    "Mosaic Network and Fund": "first round only",
+    "Artist Relief": "first round only",
+    "MAP Fund regranting (DDF + Mellon, since 2008)": "running total since 2008",
+    "Tribal Nations Conservation Pledge": "5-year pledge",
+    "Catalyst Fund": "fund total in 2019",
+    "OPT-In for Families": "3-year commitment",
+    "Think of Us, Audacious Project": "one award",
+    "COVID-19 Fund to Retain Clinical Scientists": "first round only"
+  };
+  var withAmt = programs.filter(function (p) { return p.amount != null; }).sort(function (a, b) { return b.amount - a.amount; });
+  var noAmt = programs.filter(function (p) { return p.amount == null; });
+  // Scale to the second-largest program so the rest are readable; anything larger is drawn cut off.
+  var cap = (withAmt[1] ? withAmt[1].amount : withAmt[0].amount) * 1.1;
+  document.getElementById("amounts").innerHTML = withAmt.map(function (p) {
+    var cut = p.amount > cap, pct = Math.min(1, p.amount / cap) * 50;
+    return '<button type="button" class="bar-row" data-go="' + esc(p.id) + '"><span class="nm">' + esc(p.short) + "</span>" +
+      '<span class="track"><span class="fill' + (cut ? " cut" : "") + '" style="width:' + pct + "%;background:" + COLOR[p.area] + '"></span>' +
+      '<span class="val">' + money(p.amount) + (KIND[p.name] ? ' <span class="k">' + esc(KIND[p.name]) + "</span>" : "") + "</span></span></button>";
+  }).concat(noAmt.map(function (p) {
+    return '<button type="button" class="bar-row" data-go="' + esc(p.id) + '"><span class="nm">' + esc(p.short) + "</span>" +
+      '<span class="track"><span class="val none">Amount not found</span></span></button>';
+  })).join("");
+
+  // ---------- chart 3: funder sizes ----------
+  var sized = Object.keys(D.endowments).map(function (k) { return { key: k, b: D.endowments[k].billions }; })
+    .sort(function (a, b) { return b.b - a.b; });
+  var bMax = sized[0].b, ddfB = D.endowments.DDF.billions, refPct = ddfB / bMax * 68;
+  document.getElementById("sizes").innerHTML = sized.map(function (s) {
+    var isDdf = s.key === "DDF", f = funderMap[s.key];
+    var color = isDdf ? "var(--ddf)" : f && f.programs.length > 1 ? "var(--shared)" : "var(--bar)";
+    return '<button type="button" class="bar-row" data-go="' + (isDdf ? "ddf" : esc("f:" + s.key)) + '"><span class="nm">' + esc(displayName(s.key)) + "</span>" +
+      '<span class="track"><span class="ref" style="left:' + refPct + '%"></span><span class="fill" style="width:' + (s.b / bMax * 68) + "%;background:" + color + '"></span>' +
+      '<span class="val">' + bil(s.b) + "</span></span></button>";
+  }).join("");
+  var bigger = sized.filter(function (s) { return s.b > ddfB; }).length;
+  var top = sized[0];
+  document.getElementById("sz-sub").textContent =
+    displayName(top.key) + " (" + bil(top.b) + ") is about " + Math.round(top.b / ddfB) + " times the size of DDF (" + bil(ddfB) + "). " +
+    "Of the " + sized.length + " funders with a figure on record, " + bigger + " are larger than DDF. The other " +
+    (funders.length + 1 - sized.length) + " funders have no figure.";
 
   // ---------- search ----------
   var search = document.getElementById("search");

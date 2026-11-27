@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Claude Built This</title>
+<meta name="description" content="The tools, checks, and prompts behind the simpler DDF funders map.">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .page { max-width: 760px; margin: 0 auto; padding: 28px 16px 64px; }
+  .page h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.15; letter-spacing: -0.015em; margin: 12px 0 10px; }
+  .page h2 { font-size: 21px; margin: 36px 0 10px; }
+  .page h3 { font-size: 16px; margin: 22px 0 6px; }
+  .page p, .page li { font-size: 16px; }
+  .page p { margin: 0 0 12px; }
+  .page ul { margin: 0 0 12px; padding-left: 1.2em; }
+  .page li { margin-bottom: 6px; }
+  .lede { color: var(--muted); }
+  .back { font-size: 14px; text-decoration: none; }
+  .back:hover { text-decoration: underline; }
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 12px; }
+  .tool { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .tool b { display: block; font-size: 15px; }
+  .tool span { font-size: 14px; color: var(--muted); }
+  .turn { margin: 0 0 22px; }
+  .you { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 10px 14px 12px; }
+  .lab { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 650; margin-bottom: 4px; }
+  .you .lab { color: var(--accent); }
+  .you p { margin: 0; font-weight: 550; }
+  .you .note { font-weight: 400; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  details.reply { padding: 8px 14px 0; }
+  details.reply summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; list-style: none; }
+  details.reply summary::-webkit-details-marker { display: none; }
+  details.reply summary::before { content: "\25B8  "; }
+  details.reply[open] summary::before { content: "\25BE  "; }
+  details.reply .body { margin-top: 8px; }
+  details.reply .body p, details.reply .body li { font-size: 15px; }
+  @media (max-width: 560px) { .tools { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main class="page">
+  <a class="back" href="./">&larr; Back to the map</a>
+  <h1>How Claude built this</h1>
+  <p class="lede">Claude, an AI model made by Anthropic, wrote the code for this page, checked it, and published it. The author directed every step through four prompts in one conversation on November 27, 2026. This page lists the tools, the checks, and those prompts.</p>
+
+  <h2>Tools</h2>
+  <p>The author already had accounts with Claude Code, GitHub, and Vercel and had used all three before this project.</p>
+  <div class="tools">
+    <div class="tool"><b>Claude Code</b><span>Anthropic's coding agent, run in the Claude desktop app. It wrote the HTML, CSS, and JavaScript, ran the checks below, and handled publishing.</span></div>
+    <div class="tool"><b>GitHub</b><span>Stores the code in a private repository with a history of every change.</span></div>
+    <div class="tool"><b>Vercel</b><span>Hosts the public site. It is linked to the GitHub repository, so each update pushed to GitHub goes live in about a minute.</span></div>
+    <div class="tool"><b>D3 and no-ai-slop</b><span>D3 is a free JavaScript library that draws the map. No-ai-slop is a free set of writing rules from Peter Yang that Claude followed for every sentence on the site.</span></div>
+  </div>
+  <p>The data is the research behind an earlier version of this map, the <a href="https://ddf-constellation.vercel.app/">DDF Funders Network</a>. That research found 13 programs where the Doris Duke Foundation pooled money with other funders. This version keeps the same data and changes only how it is shown.</p>
+
+  <h2>How accuracy was checked</h2>
+  <ul>
+    <li>Claude copied the data out of the original page's code with a script instead of retyping it, so no names or numbers were rewritten by hand. The script counted 13 programs, 81 funders including DDF, and 24 endowment figures, which match the original.</li>
+    <li>Every program keeps the source link from the original research. Two programs have no amount on record, and one has no source link. The site says so on their cards instead of filling in a guess.</li>
+    <li>Totals and comparisons on the page are calculated by the code from that data. Claude spot-checked them by hand: the two Environment programs add up to $105M ($102.5M plus $2.5M), and Ford's $15.8B endowment is about 7 times DDF's $2.19B.</li>
+    <li>Each amount carries a short note on what it counts, such as "5-year pledge" or "first round only," taken from the original research. Comparing a pledge to a single round of grants would be misleading without it.</li>
+    <li>Claude caught one of its own errors along the way. In chat it first said 56 funders had no endowment figure, and the page's own count showed 57. The page uses 57.</li>
+  </ul>
+
+  <h2>How usability was checked</h2>
+  <ul>
+    <li>Claude opened the site in a browser built into the Claude app and looked at screenshots after each change, at desktop width and at phone width (375 pixels), in both light and dark mode.</li>
+    <li>It tested every way into the details: clicking programs, funders, and DDF on the map; the area buttons; the program list; the "try one of these" buttons; the search box, including a name that does not exist; the Escape key; and clicking empty space to reset.</li>
+    <li>It confirmed that hovering a bar in a chart lights up the matching dots on the map, and that moving the mouse away puts the map back.</li>
+    <li>The screenshots turned up problems that Claude then fixed: the map sat too small in its box, funder names overlapped program names, one label ran off the edge, and the $500M label spilled outside its chart.</li>
+    <li>The author reviewed the result and spotted a gap Claude had missed. The original map showed connections when you hovered over a dot, and the first version of this one did not. That became the third prompt.</li>
+    <li>After each publish, Claude loaded the live Vercel site to confirm every file came through and the page had no errors.</li>
+  </ul>
+
+  <h2>The prompts</h2>
+  <p>These are the prompts in order. Click "Claude's reply" to see a summary of what came back.</p>
+
+  <div class="turn">
+    <div class="you"><div class="lab">Prompt 1</div>
+      <p>Give a first attempt at recreating this in an intuitive way that is interactive for users with limited prior knowledge.</p>
+      <p class="note">"This" is the original <a href="https://ddf-constellation.vercel.app/">DDF Funders Network</a> map.</p>
+    </div>
+    <details class="reply"><summary>Claude's reply</summary><div class="body">
+      <p>Claude rebuilt the map around one question: who funds programs with the Doris Duke Foundation? DDF sits in the center, the 13 programs circle it, and each funder sits beside the programs it backs. Funders in two or more programs are gold and labeled.</p>
+      <p>Clicking anything fades the rest of the map and opens a card with the amount, what the amount means, the full funder list, and the source. A "Start here" card offers three things to try. The year slider, zoom buttons, and dragging from the original were left out to keep the page simple.</p>
+    </div></details>
+  </div>
+
+  <div class="turn">
+    <div class="you"><div class="lab">Prompt 2</div>
+      <p>What are some other helpful components that could be in this, to make it more informational for users?</p>
+    </div>
+    <details class="reply"><summary>Claude's reply</summary><div class="body">
+      <p>Claude suggested nine additions, split by whether the data already existed:</p>
+      <ul>
+        <li>With existing data: (1) a timeline of when each program started, (2) a chart comparing program amounts, (3) a chart comparing funder sizes, (4) shareable links, and (5) a sources list with a data download.</li>
+        <li>Needing new research: (6) a one-sentence description of each program, (7) a tag for pooled funds versus looser collaborations, (8) a note on what is missing from the research, and (9) a short "what is a pooled fund?" explainer.</li>
+      </ul>
+    </div></details>
+  </div>
+
+  <div class="turn">
+    <div class="you"><div class="lab">Prompt 3</div>
+      <p>Let's do 1, 2, 3. It's also missing the hovering feature on the original one.</p>
+    </div>
+    <details class="reply"><summary>Claude's reply</summary><div class="body">
+      <p>Claude added the three charts under the map. The timeline shows that one program began in 2008 and the other 12 started between 2019 and 2026. The amount chart cuts Humanity AI's $500M bar short so the smaller programs stay readable. The funder chart marks DDF's size with a dashed line on every bar.</p>
+      <p>For hovering, Claude matched the original. Hovering a dot fades everything it is not connected to and shows a pop-up with its details. Hovering a bar, a list entry, or a name on a card previews it on the map the same way.</p>
+    </div></details>
+  </div>
+
+  <div class="turn">
+    <div class="you"><div class="lab">Prompt 4</div>
+      <p>Oh, and the How Claude Built This page. It also needs an AI explainer -- What software tools used (Claude code, Github, vercel, which i already had accounts for and experience with), how i verified accuracy and usability, and the prompts used (use what we discussed)</p>
+    </div>
+    <details class="reply"><summary>Claude's reply</summary><div class="body">
+      <p>Claude wrote this page and linked it from the bottom of the map.</p>
+    </div></details>
+  </div>
+</main>
+</body>
+</html>

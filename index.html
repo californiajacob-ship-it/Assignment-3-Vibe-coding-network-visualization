@@ -49,9 +49,37 @@
     </aside>
   </div>
 
+  <section class="more" aria-label="Charts">
+    <div class="chart linked">
+      <h2>When each program started</h2>
+      <p class="sub" id="tl-sub"></p>
+      <div id="timeline" class="timeline"></div>
+    </div>
+    <div class="two">
+      <div class="chart linked">
+        <h2>How much money each program has</h2>
+        <p class="sub">Humanity AI's $500M is too large to draw at the same scale, so its bar is cut short. The note after each amount says what it counts. A five-year pledge and a first round of grants are different kinds of numbers.</p>
+        <div id="amounts" class="bars"></div>
+      </div>
+      <div class="chart linked">
+        <h2>How big each funder is</h2>
+        <p class="sub" id="sz-sub"></p>
+        <p class="legend-row">
+          <span><i class="sw" style="background:var(--ddf)"></i>DDF</span>
+          <span><i class="sw" style="background:var(--shared)"></i>In two or more programs</span>
+          <span><i class="sw" style="background:var(--bar)"></i>In one program</span>
+          <span><i class="ref-key"></i>DDF's size</span>
+        </p>
+        <div id="sizes" class="bars"></div>
+        <p class="note">Figures are fiscal year 2023 assets under management for the largest funders and total assets from tax filings for the rest.</p>
+      </div>
+    </div>
+    <p class="hint">Hover over any bar or program to light it up on the map. Click to open its details.</p>
+  </section>
+
   <footer class="foot">
     <p>Dollar amounts come from press releases and reports. Some are pledges, some are fundraising goals, and some count only the first round of grants, so two amounts may not measure the same thing. Each program's card says what its number means. Two programs have no amount on record.</p>
-    <p>Research as of November 12, 2026.</p>
+    <p>Research as of November 12, 2026. <a href="how-claude-built-this.html">How Claude built this</a></p>
   </footer>
 </main>
 
